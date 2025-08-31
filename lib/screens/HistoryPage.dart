@@ -1,44 +1,63 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+import '../services/AuthService.dart';
+import '../services/databaseUser.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Mock history data (replace with your real data later)
-    final items = List.generate(
-      12,
-      (i) => _HistoryItem(
-        time: DateTime.now().subtract(Duration(hours: i * 7 + 2)),
-        grams: ((i % 3) + 1) * 50, // 50g, 100g, 150g
-        note: i % 4 == 0 ? "Scheduled" : "Manual",
-      ),
-    );
+    final auth = AuthService();
+    final db = DatabaseUser();
+    final uid = auth.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Feeding History'),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (_, i) {
-          final it = items[i];
-          return ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.history)),
-            title: Text('${it.grams}g • ${it.note}'),
-            subtitle: Text(_formatDateTime(it.time)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // Placeholder tap action
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Fed ${it.grams}g (${it.note})')),
-              );
-            },
-          );
-        },
-      ),
+      body: (uid == null)
+          ? const Center(child: Text('No user logged in'))
+          : FutureBuilder<QuerySnapshot>(
+              future: db.getUserHistory(uid),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                final docs = snapshot.data?.docs ?? [];
+                if (docs.isEmpty) {
+                  return const Center(child: Text('No history found.'));
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                  itemCount: docs.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final data = docs[i].data() as Map<String, dynamic>;
+                    final ts = data['timestamp'] as Timestamp?;
+                    final time = ts?.toDate() ?? DateTime.now();
+                    final grams = data['portionSize'] ?? data['grams'] ?? '-';
+                    final note = data['note'] ?? data['action'] ?? '';
+
+                    return ListTile(
+                      leading: const CircleAvatar(child: Icon(Icons.history)),
+                      title: Text('${grams}g • $note'),
+                      subtitle: Text(_formatDateTime(time)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Fed ${grams}g ($note)')),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
     );
   }
 
@@ -50,13 +69,6 @@ class HistoryPage extends StatelessWidget {
     final mm = dt.minute.toString().padLeft(2, '0');
     return '$w, ${dt.day} $m ${dt.year} • $hh:$mm';
   }
-}
-
-class _HistoryItem {
-  final DateTime time;
-  final int grams;
-  final String note;
-  _HistoryItem({required this.time, required this.grams, required this.note});
 }
 
 const _weekday = {
