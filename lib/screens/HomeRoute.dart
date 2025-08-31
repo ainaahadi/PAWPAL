@@ -1,5 +1,6 @@
 // lib/screens/HomeRoute.dart  (put anywhere; update imports as needed)
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // --- adjust these imports to your actual file locations ---
 import 'HomePage.dart';        // contains HomePageView
@@ -31,14 +32,15 @@ class HomeRoute extends StatelessWidget {
         );
       },
       onSignOut: () async {
-        // If you use FirebaseAuth, do sign-out here, then return to login
-        // await FirebaseAuth.instance.signOut();
-        // Navigator.of(context).pushReplacement(
-        //   MaterialPageRoute(builder: (_) => const Login()),
-        // );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sign-out tapped')),
-        );
+        try {
+          await FirebaseAuth.instance.signOut();
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/', (route) => false);
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Sign out failed: $e')),
+          );
+        }
       },
 
       // ===== status data (sample; bind your real data) =====
