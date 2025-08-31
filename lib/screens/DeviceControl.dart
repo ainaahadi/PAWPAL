@@ -1,8 +1,21 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:paw_ui/widgets/OptionCard.dart';
-// If you have a Scheduler page, adjust this import to your path:
-import '../widgets/Scheduler.dart';
+
+/*
+Firestore structure:
+devices/{deviceId}
+  online: bool
+  nextFeedTime: Timestamp
+  commands (collection)
+    autoId:
+      type: "dispense" | "schedule"
+      amount: number?       // for dispense
+      feedAt: Timestamp?    // for schedule
+      createdAt: server timestamp
+*/
 
 // ===== YOUR EXISTING VIEW (unchanged) =====
 class DeviceControlView extends StatelessWidget {
@@ -12,6 +25,7 @@ class DeviceControlView extends StatelessWidget {
     this.scheduledDate,
     required this.loading,
     required this.error,
+    required this.online,
     this.onLogout,
     this.onNetworkIconTap,
     this.onCardSelected,
@@ -23,6 +37,7 @@ class DeviceControlView extends StatelessWidget {
   final String? scheduledDate;
   final bool loading;
   final bool error;
+  final bool online;
 
   final VoidCallback? onLogout;
   final VoidCallback? onNetworkIconTap;
@@ -51,7 +66,7 @@ class DeviceControlView extends StatelessWidget {
             onTap: onNetworkIconTap,
             child: Icon(
               Icons.network_check,
-              color: theme.textTheme.bodyMedium?.color,
+              color: online ? Colors.green : Colors.red,
               size: 20.0,
             ),
           ),
@@ -150,33 +165,51 @@ class DeviceControl extends StatefulWidget {
 }
 
 class _DeviceControlState extends State<DeviceControl> {
+  final DocumentReference<Map<String, dynamic>> _deviceRef =
+      FirebaseFirestore.instance.collection('devices').doc('demo-device');
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _statusSub;
   int _activeIndex = 0;           // 0: Schedule, 1: Release, 2: Connect
   final bool _loading = false;
   final bool _error = false;
+  bool _online = false;
   String? _scheduledDate;         // show as a hint on Schedule tab
+
+  @override
+  void initState() {
+    super.initState();
+    _statusSub = _deviceRef.snapshots().listen((snapshot) {
+      final data = snapshot.data();
+      setState(() {
+        _online = data?['online'] == true;
+        final ts = data?['nextFeedTime'] as Timestamp?;
+        _scheduledDate = ts?.toDate().toString();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _statusSub?.cancel();
+    super.dispose();
+  }
 
   void _onSelectTab(int i) {
     setState(() => _activeIndex = i);
   }
 
-  void _onSchedule() {
-    // Navigate to your Scheduler page, or open a dialog
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const Scheduler()),
-    );
+  Future<void> _onSchedule() async {
+    final when = DateTime.now().add(const Duration(hours: 1));
+    await _deviceRef.update({'nextFeedTime': Timestamp.fromDate(when)});
+    await _deviceRef.collection('commands').add({
+      'type': 'schedule',
+      'feedAt': Timestamp.fromDate(when),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
-  void _onLogout() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign out failed: $e')),
-      );
-    }
+  void _onLogout() {
+    // If you use FirebaseAuth: await FirebaseAuth.instance.signOut();
+    Navigator.of(context).maybePop();
   }
 
   void _onNetworkTap() {
@@ -185,7 +218,12 @@ class _DeviceControlState extends State<DeviceControl> {
     );
   }
 
-  void _dispenseNow() {
+  Future<void> _dispenseNow() async {
+    await _deviceRef.collection('commands').add({
+      'type': 'dispense',
+      'amount': 20,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Dispensing 20g…')),
     );
@@ -249,6 +287,7 @@ class _DeviceControlState extends State<DeviceControl> {
       scheduledDate: _scheduledDate,
       loading: _loading,
       error: _error,
+      online: _online,
       onLogout: _onLogout,
       onNetworkIconTap: _onNetworkTap,
       onCardSelected: _onSelectTab,
