@@ -1,13 +1,13 @@
-// lib/screens/HomeRoute.dart  (put anywhere; update imports as needed)
+// lib/screens/home_route.dart  (put anywhere; update imports as needed)
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // --- adjust these imports to your actual file locations ---
-import 'HomePage.dart';        // contains HomePageView
-import 'ProfilePage.dart';     // target page
-import 'HistoryPage.dart';     // target page
+import 'home_page.dart';        // contains HomePageView
+import 'profile_page.dart';     // target page
+import 'history_page.dart';     // target page
 import '../widgets/Scheduler.dart';   // target page (if it's under widgets/)
-import 'DeviceControl.dart';   // optional: if you have a device page
+import 'device_control.dart';   // optional: if you have a device page
 
 class HomeRoute extends StatelessWidget {
   const HomeRoute({super.key});

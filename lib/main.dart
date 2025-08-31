@@ -5,21 +5,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 // Screens & widgets
-import 'screens/HomePage.dart'; // HomePageView
-import 'screens/HistoryPage.dart';
-import 'screens/HomePageAdmin.dart';
+import 'screens/home_page.dart'; // HomePageView
+import 'screens/history_page.dart';
+import 'screens/home_page_admin.dart';
 
 // USER pages
-import 'screens/ProfilePage.dart';
-import 'screens/VerifyEmail.dart';
-import 'screens/ChangePassword.dart';
+import 'screens/profile_page.dart';
+import 'screens/verify_email.dart';
+import 'screens/change_password.dart';
 
 // ADMIN pages
-import 'screens/AdminEditProfile.dart';
-import 'screens/AdminChangePassword.dart';
-import 'screens/AdminUserListPage.dart';
-import 'screens/AdminUserHistoryPage.dart';
-import 'screens/AdminUserStatusPage.dart';
+import 'screens/admin_edit_profile.dart';
+import 'screens/admin_change_password.dart';
+import 'screens/admin_user_list_page.dart';
+import 'screens/admin_user_history_page.dart';
+import 'screens/admin_user_status_page.dart';
 
 // Services
 import 'services/FirestoreService.dart';
