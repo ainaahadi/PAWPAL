@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 // If your paths differ, just adjust them (e.g. 'screens/AdminEditProfile.dart').
 import 'AdminEditProfile.dart';
 import 'AdminChangePassword.dart';
+import 'AdminUserListPage.dart';
+import 'AdminUserHistoryPage.dart';
+import 'AdminUserStatusPage.dart';
 
 /// Optional: If you have user profile/change pages too, you can import them as fallbacks
 /// import 'ProfilePage.dart';
