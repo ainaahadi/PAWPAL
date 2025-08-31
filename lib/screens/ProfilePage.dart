@@ -79,7 +79,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _pickFromGallery() async {
-    final x = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final x =
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (x != null) {
       setState(() {
         _avatarFile = File(x.path);
@@ -89,7 +90,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _pickFromCamera() async {
-    final x = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    final x =
+        await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
     if (x != null) {
       setState(() {
         _avatarFile = File(x.path);
@@ -129,7 +131,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 30,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: (Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black54).withOpacity(0.1),
+                    color: (Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.color ??
+                            Colors.black54)
+                        .withOpacity(0.1),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(15),
                       topRight: Radius.circular(15),
@@ -138,12 +145,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   alignment: Alignment.center,
                   child: const Text(
                     '',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14),
                   ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.photo_library),
-                  title: const Text('Choose from gallery', style: TextStyle(fontWeight: FontWeight.w700)),
+                  title: const Text('Choose from gallery',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickFromGallery();
@@ -151,7 +162,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.photo_camera),
-                  title: const Text('Take a photo', style: TextStyle(fontWeight: FontWeight.w700)),
+                  title: const Text('Take a photo',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickFromCamera();
@@ -159,7 +171,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete_outline),
-                  title: const Text('Remove photo', style: TextStyle(fontWeight: FontWeight.w700)),
+                  title: const Text('Remove photo',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                   onTap: () {
                     Navigator.pop(ctx);
                     _removePhoto();
@@ -184,7 +197,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       if (_avatarFile != null) {
-        final ref = FirebaseStorage.instance.ref().child('avatars/${u.uid}.jpg');
+        final ref =
+            FirebaseStorage.instance.ref().child('avatars/${u.uid}.jpg');
         await ref.putFile(_avatarFile!);
         photoUrl = await ref.getDownloadURL();
       }
@@ -242,12 +256,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 48,
-                      backgroundColor: const Color(0xFF0E2A47).withOpacity(0.1),
+                      backgroundColor:
+                          const Color(0xFF0E2A47).withOpacity(0.1),
                       backgroundImage: _avatarFile != null
                           ? FileImage(_avatarFile!)
-                          : (_avatarUrl.isNotEmpty ? NetworkImage(_avatarUrl) : null),
+                          : (_avatarUrl.isNotEmpty
+                              ? NetworkImage(_avatarUrl)
+                              : null),
                       child: _avatarFile == null && _avatarUrl.isEmpty
-                          ? const Icon(Icons.person, size: 40, color: Color(0xFF0E2A47))
+                          ? const Icon(Icons.person,
+                              size: 40, color: Color(0xFF0E2A47))
                           : null,
                     ),
                     Positioned(
@@ -261,7 +279,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           onTap: _openPhotoActions,
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
-                            child: Icon(Icons.camera_alt, size: 20, color: Colors.black),
+                            child: Icon(Icons.camera_alt,
+                                size: 20, color: Colors.black),
                           ),
                         ),
                       ),
@@ -273,7 +292,8 @@ class _ProfilePageState extends State<ProfilePage> {
               Center(
                 child: Text(
                   'Upload image',
-                  style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style:
+                      t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(height: 16),
@@ -283,7 +303,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 controller: _nameCtl,
                 decoration: const InputDecoration(labelText: 'Name'),
                 textInputAction: TextInputAction.next,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Please enter your name'
+                    : null,
               ),
               const SizedBox(height: 12),
 
@@ -292,7 +314,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 controller: _usernameCtl,
                 decoration: const InputDecoration(labelText: 'Username'),
                 textInputAction: TextInputAction.next,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a username' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Please enter a username'
+                    : null,
               ),
               const SizedBox(height: 12),
 
@@ -303,8 +327,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Please enter an email';
-                  final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim());
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Please enter an email';
+                  }
+                  final ok =
+                      RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim());
                   return ok ? null : 'Please enter a valid email';
                 },
               ),
@@ -325,7 +352,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     flex: 3,
                     child: TextFormField(
                       controller: _petNameCtl,
-                      decoration: const InputDecoration(labelText: 'Pet name'),
+                      decoration:
+                          const InputDecoration(labelText: 'Pet name'),
                       textInputAction: TextInputAction.next,
                     ),
                   ),
@@ -340,8 +368,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                 child: Text(p),
                               ))
                           .toList(),
-                      onChanged: (v) => setState(() => _petType = v ?? _petType),
-                      decoration: const InputDecoration(labelText: 'Pet type'),
+                      onChanged: (v) =>
+                          setState(() => _petType = v ?? _petType),
+                      decoration:
+                          const InputDecoration(labelText: 'Pet type'),
                     ),
                   ),
                 ],
@@ -354,7 +384,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: const Text('Notifications'),
                 subtitle: const Text('Feeding reminders & device alerts'),
                 value: _notifEnabled,
-                onChanged: (v) => setState(() => _notifEnabled = v),
+                onChanged: (v) =>
+                    setState(() => _notifEnabled = v),
               ),
               const SizedBox(height: 12),
 
@@ -362,7 +393,8 @@ class _ProfilePageState extends State<ProfilePage> {
               const Divider(height: 24),
               ListTile(
                 leading: const Icon(Icons.lock_outline),
-                title: const Text('Change password', style: TextStyle(fontWeight: FontWeight.w700)),
+                title: const Text('Change password',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.pushNamed(context, '/change-password');
@@ -376,19 +408,24 @@ class _ProfilePageState extends State<ProfilePage> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: const Text('Cancel',
+                          style:
+                              TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primary,
                         foregroundColor: const Color(0xFF0E2A47),
                         elevation: 0.5,
                       ),
                       onPressed: _saveProfile,
-                      child: const Text('Save', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: const Text('Save',
+                          style:
+                              TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],
