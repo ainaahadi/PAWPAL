@@ -17,7 +17,9 @@ import 'screens/ChangePassword.dart';
 // ADMIN pages
 import 'screens/AdminEditProfile.dart';
 import 'screens/AdminChangePassword.dart';
-import 'screens/AdminUserListPage.dart' hide AdminUserListPage;   // <-- make sure this exists
+import 'screens/AdminUserListPage.dart';
+import 'screens/AdminUserHistoryPage.dart';
+import 'screens/AdminUserStatusPage.dart';
 
 // Services
 import 'services/FirestoreService.dart';
@@ -66,12 +68,10 @@ class PawFeederApp extends StatelessWidget {
           ),
         ),
       ),
-
       routes: {
         '/verify': (context) => const VerifyEmail(),
         '/change-password': (context) => const ChangePassword(),
       },
-
       home: const _Root(),
     );
   }
@@ -183,15 +183,15 @@ class _RootState extends State<_Root> {
   }
 
   Future<void> _signOut() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign out failed: $e')),
-      );
-    }
+  try {
+    await FirebaseAuth.instance.signOut();
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Sign out failed: $e')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +203,6 @@ class _RootState extends State<_Root> {
         totalUsers: 12,
         devicesOnline: 8,
         errors24h: 1,
-
         onOpenProfile: () {
           Navigator.push(context,
             MaterialPageRoute(builder: (_) => const AdminEditProfilePage()));
