@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 // If these files live in the same "screens" folder, these imports are correct.
-// If your paths differ, just adjust them (e.g. 'screens/AdminEditProfile.dart').
-import 'AdminEditProfile.dart';
-import 'AdminChangePassword.dart';
-import 'AdminUserListPage.dart';
-import 'AdminUserHistoryPage.dart';
-import 'AdminUserStatusPage.dart';
+// If your paths differ, just adjust them (e.g. 'screens/admin_edit_profile.dart').
+import 'admin_edit_profile.dart';
+import 'admin_change_password.dart';
+import 'admin_user_list_page.dart';
+import 'admin_user_history_page.dart';
+import 'admin_user_status_page.dart';
 
 /// Optional: If you have user profile/change pages too, you can import them as fallbacks
-/// import 'ProfilePage.dart';
-/// import 'ChangePassword.dart';
+/// import 'profile_page.dart';
+/// import 'change_password.dart';
 
 class HomePageAdmin extends StatelessWidget {
   const HomePageAdmin({

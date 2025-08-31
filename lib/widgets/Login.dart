@@ -3,10 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'forgotPassword.dart';
 import 'signUp.dart';
-import '../screens/VerifyEmail.dart';
+import '../screens/verify_email.dart';
 
-import 'package:paw_ui/screens/HomePage.dart' as home;
-import '../screens/HomePageAdmin.dart' as admin;
+import 'package:paw_ui/screens/home_page.dart' as home;
+import '../screens/home_page_admin.dart' as admin;
 
 /// EDIT THIS: any email in this set is treated as an admin and
 /// will bypass email verification at login.
