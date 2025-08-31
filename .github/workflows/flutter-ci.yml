@@ -27,8 +27,8 @@ jobs:
         run: flutter pub get
 
       # Formatting check (fails CI if any file would be reformatted)
-      - name: Format check
-        run: flutter format --set-exit-if-changed .
+     - name: Format check
+       run: dart format --output=none --set-exit-if-changed .
 
       # Static analysis (lints)
       - name: Analyze
