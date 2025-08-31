@@ -12,11 +12,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install Flutter (use your local version to avoid “works on my machine” issues)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.8'   # <-- match your local SDK
+          flutter-version: '3.32.8'
           channel: 'stable'
           cache: true
 
@@ -26,25 +25,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Formatting check (fails CI if any file would be reformatted)
+      # ✅ Use dart format (flutter format is deprecated)
       - name: Format check
-        run: flutter format --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed .
 
-      # Static analysis (lints)
       - name: Analyze
         run: flutter analyze
 
-      # Unit/widget tests (skip pub since we already ran pub get)
       - name: Run tests
         run: flutter test --no-pub
-
-      # Optional: build steps (uncomment if needed)
-      # NOTE: Android builds require JDK + Android SDK; iOS requires macOS runner.
-      # - name: Set up Java (needed for Android builds)
-      #   uses: actions/setup-java@v4
-      #   with:
-      #     distribution: 'temurin'
-      #     java-version: '17'
-      #
-      # - name: Build Android appbundle
-      #   run: flutter build appbundle --release
