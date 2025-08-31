@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:paw_ui/widgets/OptionCard.dart';
 // If you have a Scheduler page, adjust this import to your path:
 import '../widgets/Scheduler.dart';
@@ -165,9 +166,17 @@ class _DeviceControlState extends State<DeviceControl> {
     );
   }
 
-  void _onLogout() {
-    // If you use FirebaseAuth: await FirebaseAuth.instance.signOut();
-    Navigator.of(context).maybePop();
+  void _onLogout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign out failed: $e')),
+      );
+    }
   }
 
   void _onNetworkTap() {
