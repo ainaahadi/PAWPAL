@@ -1,18 +1,35 @@
-            - name: Flutter SDK
-  # You may pin to the exact commit or the version.
-  # uses: MobileDevOps/flutter-sdk-action@a93694305106b954a8b85195ab7cd4bfec0401bf
-  uses: MobileDevOps/flutter-sdk-action@v1.0.0
-  with:
-    # The Flutter SDK Version
-    flutter-sdk-version: # optional, default is stable
-          
-            - name: Flutter Deployment
-  # You may pin to the exact commit or the version.
-  # uses: jeanluc243/Flutter-Deployment@1fd33eb513293af0c6cde57363d66a6a848ef6e5
-  uses: jeanluc243/Flutter-Deployment@0.1
-          
-            - name: flutter-cli
-  # You may pin to the exact commit or the version.
-  # uses: steebchen/flutter@55019e0f56278a7c84949e8e17c66e8f79d67290
-  uses: steebchen/flutter@v1.1.0
-          
+name: Flutter CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'   # your local version
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test --no-pub
