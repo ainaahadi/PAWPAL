@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -86,6 +88,7 @@ class _Root extends StatefulWidget {
 class _RootState extends State<_Root> {
   User? _user;
   final _fs = FirestoreService();
+  late final StreamSubscription<User?> _authSub;
 
   bool get _loggedIn => _user != null;
   bool get _isAdmin => (_user?.email ?? '').toLowerCase().contains('@admin');
@@ -93,7 +96,7 @@ class _RootState extends State<_Root> {
   @override
   void initState() {
     super.initState();
-    FirebaseAuth.instance.authStateChanges().listen((u) async {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((u) async {
       if (!mounted) return;
       setState(() => _user = u);
 
@@ -102,6 +105,12 @@ class _RootState extends State<_Root> {
         await _fs.upsertUserFromAuth(u, role: role);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _authSub.cancel();
+    super.dispose();
   }
 
   Future<void> _openLoginSheet() async {
