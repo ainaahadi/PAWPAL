@@ -8,7 +8,6 @@ import '../screens/VerifyEmail.dart';
 import 'package:paw_ui/screens/HomePage.dart' as home;
 import '../screens/HomePageAdmin.dart' as admin;
 
-
 /// EDIT THIS: any email in this set is treated as an admin and
 /// will bypass email verification at login.
 const Set<String> kAdminEmails = {
@@ -93,19 +92,88 @@ Future<void> _handleLogin() async {
   }
 }
 
-
   void _openForgotPasswordSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        return ForgotPassword(
-          connecting: false,
-          errorMessage: "",
-          infoMessage: "",
-          onSendReset: (email) => Navigator.pop(ctx),
-          onChangePassword: (email, newPwd) => Navigator.pop(ctx),
-          onBackToLogin: () => Navigator.pop(ctx),
+        String errorMessage = "";
+        String infoMessage = "";
+        bool connecting = false;
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> _handleSendLink(String email) async {
+              setSheetState(() {
+                connecting = true;
+                errorMessage = "";
+                infoMessage = "";
+              });
+              try {
+                await FirebaseAuth.instance
+                    .sendPasswordResetEmail(email: email.trim());
+                setSheetState(() {
+                  infoMessage = "Password reset link sent";
+                });
+              } on FirebaseAuthException catch (e) {
+                setSheetState(() {
+                  errorMessage =
+                      e.message ?? "Failed to send password reset email";
+                });
+              } catch (e) {
+                setSheetState(() {
+                  errorMessage = "Failed to send password reset email: $e";
+                });
+              } finally {
+                setSheetState(() => connecting = false);
+              }
+            }
+
+            Future<void> _handleChangePassword(
+                String email, String newPwd) async {
+              setSheetState(() {
+                connecting = true;
+                errorMessage = "";
+                infoMessage = "";
+              });
+              try {
+                final auth = FirebaseAuth.instance;
+                final credential = EmailAuthProvider.credential(
+                    email: email.trim(), password: _password);
+                User? user = auth.currentUser;
+                if (user == null) {
+                  final signInCred =
+                      await auth.signInWithCredential(credential);
+                  user = signInCred.user;
+                } else {
+                  await user.reauthenticateWithCredential(credential);
+                }
+                await user?.updatePassword(newPwd);
+                setSheetState(() {
+                  infoMessage = "Password updated";
+                });
+              } on FirebaseAuthException catch (e) {
+                setSheetState(() {
+                  errorMessage =
+                      e.message ?? "Failed to change password";
+                });
+              } catch (e) {
+                setSheetState(
+                    () => errorMessage = "Failed to change password: $e");
+              } finally {
+                setSheetState(() => connecting = false);
+              }
+            }
+
+            return ForgotPassword(
+              connecting: connecting,
+              errorMessage: errorMessage,
+              infoMessage: infoMessage,
+              onSendReset: _handleSendLink,
+              onChangePassword: _handleChangePassword,
+              onBackToLogin: () => Navigator.pop(ctx),
+            );
+          },
         );
       },
     );
