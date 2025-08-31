@@ -1,50 +1,8 @@
-name: Flutter CI
-
-on:
-  push:
-  pull_request:
-
-jobs:
-  checks:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Install Flutter (use your local version to avoid “works on my machine” issues)
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.32.8'   # <-- match your local SDK
-          channel: 'stable'
-          cache: true
-
-      - name: Flutter version
-        run: flutter --version
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      # Formatting check (fails CI if any file would be reformatted)
-     - name: Format check
-       run: dart format --output=none --set-exit-if-changed .
-
-      # Static analysis (lints)
-      - name: Analyze
-        run: flutter analyze
-
-      # Unit/widget tests (skip pub since we already ran pub get)
-      - name: Run tests
-        run: flutter test --no-pub
-
-      # Optional: build steps (uncomment if needed)
-      # NOTE: Android builds require JDK + Android SDK; iOS requires macOS runner.
-      # - name: Set up Java (needed for Android builds)
-      #   uses: actions/setup-java@v4
-      #   with:
-      #     distribution: 'temurin'
-      #     java-version: '17'
-      #
-      # - name: Build Android appbundle
-      #   run: flutter build appbundle --release
+            - name: Flutter SDK
+  # You may pin to the exact commit or the version.
+  # uses: MobileDevOps/flutter-sdk-action@a93694305106b954a8b85195ab7cd4bfec0401bf
+  uses: MobileDevOps/flutter-sdk-action@v1.0.0
+  with:
+    # The Flutter SDK Version
+    flutter-sdk-version: # optional, default is stable
+          
