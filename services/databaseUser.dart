@@ -69,7 +69,8 @@ class DatabaseUser {
   // Check user role
   Future<String?> getUserRole(String uid) async {
     try {
-      DocumentSnapshot doc = await _db.collection('paw_user').doc(uid).get();
+      DocumentSnapshot doc =
+          await _db.collection('paw_user').doc(uid).get();
       if (doc.exists && doc.data() != null) {
         return (doc.data() as Map<String, dynamic>?)?['role'] as String?;
       }
