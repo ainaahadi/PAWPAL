@@ -1,6 +1,11 @@
 import 'dart:io';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../services/databaseUser.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,13 +17,17 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Mock profile data (UI-only)
+  final _auth = FirebaseAuth.instance;
+  final _db = DatabaseUser();
+
+  final _nameCtl = TextEditingController();
+  final _usernameCtl = TextEditingController();
+  final _emailCtl = TextEditingController();
+  final _bioCtl = TextEditingController();
+  final _petNameCtl = TextEditingController();
+
   File? _avatarFile;
-  String _displayName = '';
-  String _username = '';
-  String _email = '';
-  String _bio = '';
-  String _petName = '';
+  String _avatarUrl = '';
   String _petType = 'Cat';
   bool _notifEnabled = true;
 
@@ -27,18 +36,73 @@ class _ProfilePageState extends State<ProfilePage> {
   // Image picker
   final _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    final u = _auth.currentUser;
+    _emailCtl.text = u?.email ?? '';
+    _nameCtl.text = u?.displayName ?? '';
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final u = _auth.currentUser;
+    if (u == null) return;
+    try {
+      final doc = await _db.getUser(u.uid);
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        setState(() {
+          _nameCtl.text = data['displayName'] ?? _nameCtl.text;
+          _usernameCtl.text = data['username'] ?? '';
+          _emailCtl.text = data['email'] ?? _emailCtl.text;
+          _bioCtl.text = data['bio'] ?? '';
+          _petNameCtl.text = data['petName'] ?? '';
+          _petType = data['petType'] ?? _petType;
+          _notifEnabled = data['notifEnabled'] ?? _notifEnabled;
+          _avatarUrl = data['avatarUrl'] ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load profile: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtl.dispose();
+    _usernameCtl.dispose();
+    _emailCtl.dispose();
+    _bioCtl.dispose();
+    _petNameCtl.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickFromGallery() async {
     final x = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (x != null) setState(() => _avatarFile = File(x.path));
+    if (x != null) {
+      setState(() {
+        _avatarFile = File(x.path);
+        _avatarUrl = '';
+      });
+    }
   }
 
   Future<void> _pickFromCamera() async {
     final x = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
-    if (x != null) setState(() => _avatarFile = File(x.path));
+    if (x != null) {
+      setState(() {
+        _avatarFile = File(x.path);
+        _avatarUrl = '';
+      });
+    }
   }
 
   void _removePhoto() {
-    setState(() => _avatarFile = null);
+    setState(() {
+      _avatarFile = null;
+      _avatarUrl = '';
+    });
   }
 
   void _openPhotoActions() {
@@ -110,15 +174,48 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile saved (UI-only)')),
-    );
+    final u = _auth.currentUser;
+    if (u == null) return;
 
-    Navigator.pop(context);
+    String? photoUrl = _avatarUrl;
+
+    try {
+      if (_avatarFile != null) {
+        final ref = FirebaseStorage.instance.ref().child('avatars/${u.uid}.jpg');
+        await ref.putFile(_avatarFile!);
+        photoUrl = await ref.getDownloadURL();
+      }
+
+      await u.updateDisplayName(_nameCtl.text.trim());
+      if (photoUrl != null && photoUrl.isNotEmpty) {
+        await u.updatePhotoURL(photoUrl);
+      }
+
+      await _db.updateUserProfile(u.uid, {
+        'displayName': _nameCtl.text.trim(),
+        'username': _usernameCtl.text.trim(),
+        'email': _emailCtl.text.trim(),
+        'bio': _bioCtl.text.trim(),
+        'petName': _petNameCtl.text.trim(),
+        'petType': _petType,
+        'notifEnabled': _notifEnabled,
+        if (photoUrl != null && photoUrl.isNotEmpty) 'avatarUrl': photoUrl,
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile saved')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save: $e')),
+      );
+    }
   }
 
   @override
@@ -146,8 +243,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     CircleAvatar(
                       radius: 48,
                       backgroundColor: const Color(0xFF0E2A47).withOpacity(0.1),
-                      backgroundImage: _avatarFile != null ? FileImage(_avatarFile!) : null,
-                      child: _avatarFile == null ? const Icon(Icons.person, size: 40, color: Color(0xFF0E2A47)) : null,
+                      backgroundImage: _avatarFile != null
+                          ? FileImage(_avatarFile!)
+                          : (_avatarUrl.isNotEmpty ? NetworkImage(_avatarUrl) : null),
+                      child: _avatarFile == null && _avatarUrl.isEmpty
+                          ? const Icon(Icons.person, size: 40, color: Color(0xFF0E2A47))
+                          : null,
                     ),
                     Positioned(
                       right: 0,
@@ -179,31 +280,28 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // Display Name
               TextFormField(
+                controller: _nameCtl,
                 decoration: const InputDecoration(labelText: 'Name'),
                 textInputAction: TextInputAction.next,
-                initialValue: _displayName,
-                onSaved: (v) => _displayName = v?.trim() ?? '',
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
               ),
               const SizedBox(height: 12),
 
               // Username
               TextFormField(
+                controller: _usernameCtl,
                 decoration: const InputDecoration(labelText: 'Username'),
                 textInputAction: TextInputAction.next,
-                initialValue: _username,
-                onSaved: (v) => _username = v?.trim() ?? '',
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a username' : null,
               ),
               const SizedBox(height: 12),
 
               // Email
               TextFormField(
+                controller: _emailCtl,
                 decoration: const InputDecoration(labelText: 'Email'),
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                initialValue: _email,
-                onSaved: (v) => _email = v?.trim() ?? '',
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Please enter an email';
                   final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim());
@@ -214,10 +312,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // Bio
               TextFormField(
+                controller: _bioCtl,
                 decoration: const InputDecoration(labelText: 'Bio'),
                 maxLines: 3,
-                initialValue: _bio,
-                onSaved: (v) => _bio = v?.trim() ?? '',
               ),
               const SizedBox(height: 12),
 
@@ -227,10 +324,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   Expanded(
                     flex: 3,
                     child: TextFormField(
+                      controller: _petNameCtl,
                       decoration: const InputDecoration(labelText: 'Pet name'),
                       textInputAction: TextInputAction.next,
-                      initialValue: _petName,
-                      onSaved: (v) => _petName = v?.trim() ?? '',
                     ),
                   ),
                   const SizedBox(width: 12),
