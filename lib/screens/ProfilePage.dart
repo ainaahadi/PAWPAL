@@ -52,6 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final doc = await _db.getUser(u.uid);
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
+        if (!mounted) return;
         setState(() {
           _nameCtl.text = data['displayName'] ?? _nameCtl.text;
           _usernameCtl.text = data['username'] ?? '';
@@ -81,6 +82,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _pickFromGallery() async {
     final x =
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (!mounted) return;
     if (x != null) {
       setState(() {
         _avatarFile = File(x.path);
@@ -92,6 +94,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _pickFromCamera() async {
     final x =
         await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (!mounted) return;
     if (x != null) {
       setState(() {
         _avatarFile = File(x.path);
