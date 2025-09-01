@@ -13,7 +13,10 @@ class AdminUserStatusPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Status'),
+        backgroundColor: const Color(0xFFFFF3C4),
+        foregroundColor: Color(0xFF0E2A47),
       ),
+      backgroundColor: const Color(0xFFFFFDF3),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: query.snapshots(),
         builder: (context, snapshot) {

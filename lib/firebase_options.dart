@@ -36,7 +36,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '614179992660',
     projectId: 'pawpal-de6dd',
     authDomain: 'pawpal-de6dd.firebaseapp.com',
-    storageBucket: 'pawpal-de6dd.firebasestorage.app',
+    // Must be the bucket name, not the download domain
+    storageBucket: 'pawpal-de6dd.appspot.com',
     measurementId: 'G-9Z87FGSQKV',
   );
 
@@ -45,7 +46,8 @@ class DefaultFirebaseOptions {
     appId: '1:614179992660:android:ab1426b6d853a2702de9c1',
     messagingSenderId: '614179992660',
     projectId: 'pawpal-de6dd',
-    storageBucket: 'pawpal-de6dd.firebasestorage.app',
+    // Must be the bucket name, not the download domain
+    storageBucket: 'pawpal-de6dd.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -53,7 +55,8 @@ class DefaultFirebaseOptions {
     appId: '1:614179992660:ios:464f0fb6fefc1a702de9c1',
     messagingSenderId: '614179992660',
     projectId: 'pawpal-de6dd',
-    storageBucket: 'pawpal-de6dd.firebasestorage.app',
+    // Must be the bucket name, not the download domain
+    storageBucket: 'pawpal-de6dd.appspot.com',
     iosBundleId: 'com.example.pawUi',
   );
 
@@ -62,7 +65,8 @@ class DefaultFirebaseOptions {
     appId: '1:614179992660:ios:464f0fb6fefc1a702de9c1',
     messagingSenderId: '614179992660',
     projectId: 'pawpal-de6dd',
-    storageBucket: 'pawpal-de6dd.firebasestorage.app',
+    // Must be the bucket name, not the download domain
+    storageBucket: 'pawpal-de6dd.appspot.com',
     iosBundleId: 'com.example.pawUi',
   );
 
@@ -72,7 +76,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '614179992660',
     projectId: 'pawpal-de6dd',
     authDomain: 'pawpal-de6dd.firebaseapp.com',
-    storageBucket: 'pawpal-de6dd.firebasestorage.app',
+    // Must be the bucket name, not the download domain
+    storageBucket: 'pawpal-de6dd.appspot.com',
     measurementId: 'G-LG519D58V8',
   );
 }

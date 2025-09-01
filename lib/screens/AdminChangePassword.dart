@@ -6,7 +6,8 @@ class AdminChangePasswordPage extends StatefulWidget {
   const AdminChangePasswordPage({super.key});
 
   @override
-  State<AdminChangePasswordPage> createState() => _AdminChangePasswordPageState();
+  State<AdminChangePasswordPage> createState() =>
+      _AdminChangePasswordPageState();
 }
 
 class _AdminChangePasswordPageState extends State<AdminChangePasswordPage> {

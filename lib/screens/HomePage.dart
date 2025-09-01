@@ -27,6 +27,9 @@ class HomePageView extends StatelessWidget {
     this.showEmptyState = false,
     this.emptyImageAsset,
     this.emptyText,
+
+    // auth
+    this.onOpenLogin,
   });
 
   final bool isAuthorizing;
@@ -49,6 +52,7 @@ class HomePageView extends StatelessWidget {
   final bool showEmptyState;
   final String? emptyImageAsset;
   final String? emptyText;
+  final VoidCallback? onOpenLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +130,7 @@ class HomePageView extends StatelessWidget {
             subtitle: "Feed",
             icon: Icons.timer,
             onTap: onSchedule, // callback from main.dart
-            active: true,      // highlighted in blue now
+            active: true, // highlighted in blue now
           ),
           _ActionCard(
             title: "Connect",
@@ -180,6 +184,12 @@ class HomePageView extends StatelessWidget {
               style: text.bodyMedium,
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 16),
+            if (onOpenLogin != null)
+              ElevatedButton(
+                onPressed: onOpenLogin,
+                child: const Text('Login / Sign up'),
+              ),
           ],
         ),
       );
@@ -199,10 +209,12 @@ class HomePageView extends StatelessWidget {
 
     // ---------- FAB ----------
     final fab = FloatingActionButton.extended(
-      onPressed: showEmptyState ? onConnectDevice : onSchedule,
+      onPressed: showEmptyState ? (onOpenLogin ?? onConnectDevice) : onSchedule,
       icon: const Icon(Icons.add),
       label: Text(
-        showEmptyState ? 'PawFeeder' : 'Schedule',
+        showEmptyState
+            ? (onOpenLogin != null ? 'Login' : 'PawFeeder')
+            : 'Schedule',
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       backgroundColor: const Color.fromARGB(255, 2, 42, 76), // blue FAB
@@ -358,7 +370,9 @@ class _ActionCard extends StatelessWidget {
       onTap: onTap,
       child: Card(
         // Soft yellow for normal buttons, blue for the active one
-        color: active ? const Color(0xFF1E88E5) : const Color(0xFFFFF8E1), // <- changed
+        color: active
+            ? const Color(0xFF1E88E5)
+            : const Color(0xFFFFF8E1), // <- changed
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: SizedBox(
           width: 100,

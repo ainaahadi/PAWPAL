@@ -113,9 +113,8 @@ class DeviceControlView extends StatelessWidget {
       ],
     );
 
-    final Widget bodyContent = error
-        ? const SizedBox.shrink()
-        : (content ?? const SizedBox.shrink());
+    final Widget bodyContent =
+        error ? const SizedBox.shrink() : (content ?? const SizedBox.shrink());
 
     final fab = _showScheduleFab
         ? FloatingActionButton.extended(
@@ -168,11 +167,11 @@ class _DeviceControlState extends State<DeviceControl> {
   final DocumentReference<Map<String, dynamic>> _deviceRef =
       FirebaseFirestore.instance.collection('devices').doc('demo-device');
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _statusSub;
-  int _activeIndex = 0;           // 0: Schedule, 1: Release, 2: Connect
+  int _activeIndex = 0; // 0: Schedule, 1: Release, 2: Connect
   final bool _loading = false;
   final bool _error = false;
   bool _online = false;
-  String? _scheduledDate;         // show as a hint on Schedule tab
+  String? _scheduledDate; // show as a hint on Schedule tab
 
   @override
   void initState() {

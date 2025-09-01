@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // If these files live in the same "screens" folder, these imports are correct.
 // If your paths differ, just adjust them (e.g. 'screens/AdminEditProfile.dart').
@@ -62,27 +63,43 @@ class HomePageAdmin extends StatelessWidget {
     final nowStr = DateFormat('EEE, MMM d').format(DateTime.now());
 
     // ===== Helpers ===========================================================
-    void _go(Widget page) {
+    void go(Widget page) {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
     }
 
     // Built-in fallbacks so taps still work even if parent forgot to pass handlers.
-    final _openProfile = onOpenProfile ??
-        () => _go(const AdminEditProfilePage()); // change to ProfilePage() if you prefer
-    final _changePassword = onChangePassword ??
-        () => _go(const AdminChangePasswordPage()); // change to ChangePassword() if needed
-    final _signOut = onSignOut; // optional; if null we just won't show the item
+    final openProfile = onOpenProfile ??
+        () => go(
+            const AdminEditProfilePage()); // change to ProfilePage() if you prefer
+    final changePassword = onChangePassword ??
+        () => go(
+            const AdminChangePasswordPage()); // change to ChangePassword() if needed
+    final signOut = onSignOut ??
+        () async {
+          try {
+            await FirebaseAuth.instance.signOut();
+            if (context.mounted) {
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil('/', (route) => false);
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Sign out failed: $e')),
+              );
+            }
+          }
+        };
 
-    final _openUserList =
-        onOpenUserList ?? () => _go(const AdminUserListPage());
-    final _openDevices = onOpenDevices ??
+    final openUserList = onOpenUserList ?? () => go(const AdminUserListPage());
+    final openDevices = onOpenDevices ??
         () => ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Devices page not wired yet')),
             );
-    final _openUserHistory =
-        onOpenUserHistory ?? () => _go(const AdminUserHistoryPage());
-    final _openUserStatus =
-        onOpenUserStatus ?? () => _go(const AdminUserStatusPage());
+    final openUserHistory =
+        onOpenUserHistory ?? () => go(const AdminUserHistoryPage());
+    final openUserStatus =
+        onOpenUserStatus ?? () => go(const AdminUserStatusPage());
 
     // ===== UI ================================================================
     return Container(
@@ -118,9 +135,9 @@ class HomePageAdmin extends StatelessWidget {
                         ),
                         const Spacer(),
                         _TopMenuButtonAdmin(
-                          onEditProfile: _openProfile,
-                          onChangePassword: _changePassword,
-                          onSignOut: _signOut,
+                          onEditProfile: openProfile,
+                          onChangePassword: changePassword,
+                          onSignOut: signOut,
                         ),
                       ],
                     ),
@@ -182,7 +199,7 @@ class HomePageAdmin extends StatelessWidget {
                               ),
                             ),
                             TextButton.icon(
-                              onPressed: _openProfile,
+                              onPressed: openProfile,
                               icon: const Icon(Icons.edit),
                               label: const Text("Edit"),
                             ),
@@ -227,25 +244,25 @@ class HomePageAdmin extends StatelessWidget {
                           subtitle: 'List',
                           icon: Icons.people,
                           active: true,
-                          onTap: _openUserList,
+                          onTap: openUserList,
                         ),
                         ActionItem(
                           title: 'Devices',
                           subtitle: 'View',
                           icon: Icons.memory,
-                          onTap: _openDevices,
+                          onTap: openDevices,
                         ),
                         ActionItem(
                           title: 'History',
                           subtitle: 'Logs',
                           icon: Icons.history,
-                          onTap: _openUserHistory,
+                          onTap: openUserHistory,
                         ),
                         ActionItem(
                           title: 'Status',
                           subtitle: 'Live',
                           icon: Icons.monitor_heart,
-                          onTap: _openUserStatus,
+                          onTap: openUserStatus,
                         ),
                       ],
                     ),
@@ -258,10 +275,10 @@ class HomePageAdmin extends StatelessWidget {
 
         // ----- FAB -----
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: _openUserList,
+          onPressed: openUserList,
           icon: const Icon(Icons.people),
-          label:
-              const Text('User List', style: TextStyle(fontWeight: FontWeight.w700)),
+          label: const Text('User List',
+              style: TextStyle(fontWeight: FontWeight.w700)),
           backgroundColor: const Color(0xFFFFB300),
           foregroundColor: Colors.white,
         ),
@@ -304,8 +321,8 @@ class _TopMenuButtonAdmin extends StatelessWidget {
         const PopupMenuItem(
           value: _AdminMenuAction.editProfile,
           child: ListTile(
-            leading: Icon(Icons.edit),
-            title: Text('Edit Profile'),
+            leading: Icon(Icons.person),
+            title: Text('Profile'),
           ),
         ),
         const PopupMenuItem(
@@ -334,7 +351,6 @@ enum _AdminMenuAction { editProfile, changePassword, signOut }
 // ===== Stats Grid =====
 class _StatsGrid extends StatelessWidget {
   const _StatsGrid({
-    super.key,
     required this.items,
     this.crossAxisCount = 3,
   });
@@ -359,7 +375,8 @@ class _StatsGrid extends StatelessWidget {
         final text = Theme.of(context).textTheme;
         return Card(
           color: const Color(0xFFFFF8E1),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
@@ -406,7 +423,6 @@ class StatItem {
 // ===== Action Grid =====
 class _ActionGrid extends StatelessWidget {
   const _ActionGrid({
-    super.key,
     required this.children,
     this.crossAxisCount = 2,
   });
@@ -490,8 +506,7 @@ class _ActionCardAdmin extends StatelessWidget {
                 Icon(icon, color: fg),
                 const SizedBox(height: 8),
                 Text(title,
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, color: fg)),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: fg)),
                 Text(subtitle,
                     style: TextStyle(
                         color: active ? Colors.white : Colors.grey[600])),
@@ -504,76 +519,7 @@ class _ActionCardAdmin extends StatelessWidget {
   }
 }
 
-// ===== Optional placeholder pages (keep if you navigate to them) =====
-class AdminUserListPage extends StatelessWidget {
-  const AdminUserListPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    final mock = List.generate(12, (i) => 'User #${i + 1}');
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Users'),
-      ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: mock.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (_, i) => Card(
-          child: ListTile(
-            leading: CircleAvatar(child: Text('${i + 1}')),
-            title: Text(mock[i],
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            subtitle:
-                Text('Devices: ${2 + (i % 3)}', style: t.bodyMedium),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Open ${mock[i]} (placeholder)')),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class AdminUserHistoryPage extends StatelessWidget {
-  const AdminUserHistoryPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context)),
-        title: const Text('User History'),
-      ),
-      body: const Center(
-          child: Text('Filter by user / date (placeholder)')),
-    );
-  }
-}
-
-class AdminUserStatusPage extends StatelessWidget {
-  const AdminUserStatusPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context)),
-        title: const Text('User Status'),
-      ),
-      body: const Center(
-          child: Text('Online/offline, battery, last feed (placeholder)')),
-    );
-  }
-}
+// Duplicate placeholder pages removed. Concrete implementations live in:
+// - AdminUserListPage.dart
+// - AdminUserHistoryPage.dart
+// - AdminUserStatusPage.dart

@@ -98,7 +98,8 @@ class _ChangePasswordState extends State<ChangePassword> {
                       color: Colors.red.shade600,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(_error!, style: const TextStyle(color: Colors.white)),
+                    child: Text(_error!,
+                        style: const TextStyle(color: Colors.white)),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -108,8 +109,9 @@ class _ChangePasswordState extends State<ChangePassword> {
                   decoration: const InputDecoration(
                     labelText: 'Current password',
                   ),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Enter your current password' : null,
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? 'Enter your current password'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -135,7 +137,8 @@ class _ChangePasswordState extends State<ChangePassword> {
                     labelText: 'Confirm new password',
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Confirm your new password';
+                    if (v == null || v.isEmpty)
+                      return 'Confirm your new password';
                     if (v.trim() != _newCtrl.text.trim()) {
                       return 'Passwords do not match';
                     }
@@ -147,7 +150,8 @@ class _ChangePasswordState extends State<ChangePassword> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _submitting ? null : () => Navigator.pop(context),
+                        onPressed:
+                            _submitting ? null : () => Navigator.pop(context),
                         child: const Text('Cancel'),
                       ),
                     ),
@@ -159,7 +163,8 @@ class _ChangePasswordState extends State<ChangePassword> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('Update password'),
                       ),

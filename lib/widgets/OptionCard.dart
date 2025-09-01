@@ -26,7 +26,8 @@ class OptionCard extends StatelessWidget {
       child: Card(
         elevation: 3.0,
         color: active ? theme.colorScheme.primary : Colors.white,
-        shadowColor: active ? theme.colorScheme.secondary : const Color(0xFFf7f7f7),
+        shadowColor:
+            active ? theme.colorScheme.secondary : const Color(0xFFf7f7f7),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),

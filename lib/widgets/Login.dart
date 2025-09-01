@@ -5,19 +5,6 @@ import 'forgotPassword.dart';
 import 'signUp.dart';
 import '../screens/VerifyEmail.dart';
 
-import 'package:paw_ui/screens/HomePage.dart' as home;
-import '../screens/HomePageAdmin.dart' as admin;
-
-/// EDIT THIS: any email in this set is treated as an admin and
-/// will bypass email verification at login.
-const Set<String> kAdminEmails = {
-  'admin@pawpal.app',
-  'ainaaahadi@gmail.com',
-  'syarifhsyed@gmail.com',
-  'adirantsh@gmail.com',
-  // 'your.other.admin@email.com',
-};
-
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -32,65 +19,47 @@ class _LoginState extends State<Login> {
   bool _loading = false;
   String _error = "";
 
-Future<void> _handleLogin() async {
-  setState(() {
-    _loading = true;
-    _error = "";
-  });
+  Future<void> _handleLogin() async {
+    setState(() {
+      _loading = true;
+      _error = "";
+    });
 
-  try {
-    final cred = await _auth.signInWithEmailAndPassword(
-      email: _email.trim(),
-      password: _password,
-    );
-    final user = cred.user;
-
-    if (user == null) {
-      setState(() => _error = "Login failed");
-      return;
-    }
-
-    // -------- ADMIN RULE FIRST (navigate here directly) --------
-    final normalized = _email.trim().toLowerCase();
-    final isAdmin = kAdminEmails.contains(normalized);
-
-    if (isAdmin) {
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const admin.HomePageAdmin()),
-        (route) => false,
+    try {
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: _email.trim(),
+        password: _password,
       );
-      return;
-    }
+      final user = cred.user;
 
-    // -------- NORMAL USER FLOW --------
-    if (!user.emailVerified) {
+      if (user == null) {
+        setState(() => _error = "Login failed");
+        return;
+      }
+
+      // Rely on server-side verification and role from Firestore.
+      // Optionally keep client-side UX to prompt email verification.
+      if (!user.emailVerified) {
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const VerifyEmail()),
+        );
+        // User returns and taps Login again after verifying
+        return;
+      }
+
       if (!mounted) return;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const VerifyEmail()),
-      );
-      // User returns and taps Login again after verifying
-      return;
+      // Reset to root; _Root will render User home via auth listener
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = e.message ?? "Login failed");
+    } catch (e) {
+      setState(() => _error = "Login failed: $e");
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => const home.HomePageView(
-          isAuthorizing: false, // required param in your constructor
-        ),
-      ),
-      (route) => false,
-    );
-  } on FirebaseAuthException catch (e) {
-    setState(() => _error = e.message ?? "Login failed");
-  } catch (e) {
-    setState(() => _error = "Login failed: $e");
-  } finally {
-    if (mounted) setState(() => _loading = false);
   }
-}
 
   void _openForgotPasswordSheet() {
     showModalBottomSheet(
@@ -103,7 +72,7 @@ Future<void> _handleLogin() async {
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            Future<void> _handleSendLink(String email) async {
+            Future<void> handleSendLink(String email) async {
               setSheetState(() {
                 connecting = true;
                 errorMessage = "";
@@ -129,7 +98,7 @@ Future<void> _handleLogin() async {
               }
             }
 
-            Future<void> _handleChangePassword(
+            Future<void> handleChangePassword(
                 String email, String newPwd) async {
               setSheetState(() {
                 connecting = true;
@@ -154,8 +123,7 @@ Future<void> _handleLogin() async {
                 });
               } on FirebaseAuthException catch (e) {
                 setSheetState(() {
-                  errorMessage =
-                      e.message ?? "Failed to change password";
+                  errorMessage = e.message ?? "Failed to change password";
                 });
               } catch (e) {
                 setSheetState(
@@ -169,8 +137,8 @@ Future<void> _handleLogin() async {
               connecting: connecting,
               errorMessage: errorMessage,
               infoMessage: infoMessage,
-              onSendReset: _handleSendLink,
-              onChangePassword: _handleChangePassword,
+              onSendReset: handleSendLink,
+              onChangePassword: handleChangePassword,
               onBackToLogin: () => Navigator.pop(ctx),
             );
           },
@@ -203,7 +171,8 @@ Future<void> _handleLogin() async {
                 MaterialPageRoute(builder: (_) => const VerifyEmail()),
               );
             } on FirebaseAuthException catch (e) {
-              if (mounted) setState(() => _error = e.message ?? "Sign up failed");
+              if (mounted)
+                setState(() => _error = e.message ?? "Sign up failed");
             } catch (e) {
               if (mounted) setState(() => _error = "Sign up failed: $e");
             }

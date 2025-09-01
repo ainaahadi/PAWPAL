@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // --- adjust these imports to your actual file locations ---
-import 'HomePage.dart';        // contains HomePageView
-import 'ProfilePage.dart';     // target page
-import 'HistoryPage.dart';     // target page
-import '../widgets/Scheduler.dart';   // target page (if it's under widgets/)
-import 'DeviceControl.dart';   // optional: if you have a device page
+import 'HomePage.dart'; // contains HomePageView
+import 'ProfilePage.dart'; // target page
+import 'HistoryPage.dart'; // target page
+import '../widgets/Scheduler.dart'; // target page (if it's under widgets/)
+import 'DeviceControl.dart'; // optional: if you have a device page
 
 class HomeRoute extends StatelessWidget {
   const HomeRoute({super.key});
@@ -34,8 +34,7 @@ class HomeRoute extends StatelessWidget {
       onSignOut: () async {
         try {
           await FirebaseAuth.instance.signOut();
-          Navigator.of(context)
-              .pushNamedAndRemoveUntil('/', (route) => false);
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Sign out failed: $e')),
@@ -45,9 +44,9 @@ class HomeRoute extends StatelessWidget {
 
       // ===== status data (sample; bind your real data) =====
       username: 'Ainaa',
-      avatarUrl: null,           // or a real network image URL
-      foodWeightGrams: 420,      // example
-      catDetected: true,         // example
+      avatarUrl: null, // or a real network image URL
+      foodWeightGrams: 420, // example
+      catDetected: true, // example
 
       // ===== quick actions (WIRED) =====
       onDispense: () {

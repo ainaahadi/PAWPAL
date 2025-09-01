@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 class ForgotPassword extends StatefulWidget {
   /// UI-only: parent controls loading and messages.
   final bool connecting;
-  final String errorMessage;   // shows red bar if non-empty
-  final String infoMessage;    // shows green bar if non-empty and no error
+  final String errorMessage; // shows red bar if non-empty
+  final String infoMessage; // shows green bar if non-empty and no error
 
   /// Callbacks for the two flows:
   /// 1) Send reset link

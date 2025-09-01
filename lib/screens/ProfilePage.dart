@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../services/databaseUser.dart';
+import '../services/FirestoreService.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -18,7 +18,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
   final _auth = FirebaseAuth.instance;
-  final _db = DatabaseUser();
+  final _fs = FirestoreService();
 
   final _nameCtl = TextEditingController();
   final _usernameCtl = TextEditingController();
@@ -49,7 +49,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final u = _auth.currentUser;
     if (u == null) return;
     try {
-      final doc = await _db.getUser(u.uid);
+      final doc = await _fs.users.doc(u.uid).get();
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         if (!mounted) return;
@@ -134,10 +134,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 30,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: (Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.color ??
+                    color: (Theme.of(context).textTheme.bodyMedium?.color ??
                             Colors.black54)
                         .withOpacity(0.1),
                     borderRadius: const BorderRadius.only(
@@ -200,26 +197,40 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       if (_avatarFile != null) {
-        final ref =
-            FirebaseStorage.instance.ref().child('avatars/${u.uid}.jpg');
-        await ref.putFile(_avatarFile!);
+        final String ext = _avatarFile!.path.split('.').last.toLowerCase();
+        final String mime = (ext == 'png') ? 'image/png' : 'image/jpeg';
+        final path = 'avatars/${u.uid}/profile.${ext.isEmpty ? 'jpg' : ext}';
+        final ref = FirebaseStorage.instance.ref(path);
+        try {
+          await ref.putFile(
+            _avatarFile!,
+            SettableMetadata(contentType: mime),
+          );
+        } on FirebaseException catch (e) {
+          debugPrint('Storage upload failed [${e.code}] path=$path');
+          rethrow;
+        }
         photoUrl = await ref.getDownloadURL();
       }
 
       await u.updateDisplayName(_nameCtl.text.trim());
-      if (photoUrl != null && photoUrl.isNotEmpty) {
+      if (photoUrl.isNotEmpty) {
         await u.updatePhotoURL(photoUrl);
       }
 
-      await _db.updateUserProfile(u.uid, {
-        'displayName': _nameCtl.text.trim(),
-        'username': _usernameCtl.text.trim(),
-        'email': _emailCtl.text.trim(),
-        'bio': _bioCtl.text.trim(),
+      await _fs.updateMyProfile(
+        uid: u.uid,
+        displayName: _nameCtl.text.trim(),
+        username: _usernameCtl.text.trim(),
+        email: _emailCtl.text.trim(),
+        bio: _bioCtl.text.trim(),
+        notifEnabled: _notifEnabled,
+        avatarUrl: photoUrl.isNotEmpty ? photoUrl : null,
+      );
+      // Persist additional profile fields maintained on the user-facing page.
+      await _fs.users.doc(u.uid).update({
         'petName': _petNameCtl.text.trim(),
         'petType': _petType,
-        'notifEnabled': _notifEnabled,
-        if (photoUrl != null && photoUrl.isNotEmpty) 'avatarUrl': photoUrl,
       });
 
       if (!mounted) return;
@@ -238,6 +249,11 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    ImageProvider<Object>? avatarProvider() {
+      if (_avatarFile != null) return FileImage(_avatarFile!);
+      if (_avatarUrl.isNotEmpty) return NetworkImage(_avatarUrl);
+      return null;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -259,13 +275,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 48,
-                      backgroundColor:
-                          const Color(0xFF0E2A47).withOpacity(0.1),
-                      backgroundImage: _avatarFile != null
-                          ? FileImage(_avatarFile!)
-                          : (_avatarUrl.isNotEmpty
-                              ? NetworkImage(_avatarUrl)
-                              : null),
+                      backgroundColor: const Color(0xFF0E2A47).withOpacity(0.1),
+                      backgroundImage: avatarProvider(),
                       child: _avatarFile == null && _avatarUrl.isEmpty
                           ? const Icon(Icons.person,
                               size: 40, color: Color(0xFF0E2A47))
@@ -295,8 +306,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Center(
                 child: Text(
                   'Upload image',
-                  style:
-                      t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(height: 16),
@@ -333,8 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   if (v == null || v.trim().isEmpty) {
                     return 'Please enter an email';
                   }
-                  final ok =
-                      RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim());
+                  final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim());
                   return ok ? null : 'Please enter a valid email';
                 },
               ),
@@ -355,8 +364,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     flex: 3,
                     child: TextFormField(
                       controller: _petNameCtl,
-                      decoration:
-                          const InputDecoration(labelText: 'Pet name'),
+                      decoration: const InputDecoration(labelText: 'Pet name'),
                       textInputAction: TextInputAction.next,
                     ),
                   ),
@@ -373,8 +381,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           .toList(),
                       onChanged: (v) =>
                           setState(() => _petType = v ?? _petType),
-                      decoration:
-                          const InputDecoration(labelText: 'Pet type'),
+                      decoration: const InputDecoration(labelText: 'Pet type'),
                     ),
                   ),
                 ],
@@ -387,8 +394,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: const Text('Notifications'),
                 subtitle: const Text('Feeding reminders & device alerts'),
                 value: _notifEnabled,
-                onChanged: (v) =>
-                    setState(() => _notifEnabled = v),
+                onChanged: (v) => setState(() => _notifEnabled = v),
               ),
               const SizedBox(height: 12),
 
@@ -412,23 +418,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       child: const Text('Cancel',
-                          style:
-                              TextStyle(fontWeight: FontWeight.w700)),
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: const Color(0xFF0E2A47),
                         elevation: 0.5,
                       ),
                       onPressed: _saveProfile,
                       child: const Text('Save',
-                          style:
-                              TextStyle(fontWeight: FontWeight.w700)),
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],
@@ -440,3 +443,5 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+
+class _avatarProvider {}

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:paw_ui/screens/DeviceControl.dart';
 
 import 'firebase_options.dart';
 
@@ -20,6 +23,8 @@ import 'screens/AdminChangePassword.dart';
 import 'screens/AdminUserListPage.dart';
 import 'screens/AdminUserHistoryPage.dart';
 import 'screens/AdminUserStatusPage.dart';
+import 'screens/AdminMyProfileViewPage.dart';
+import 'screens/UserMyProfileViewPage.dart';
 
 // Services
 import 'services/FirestoreService.dart';
@@ -29,9 +34,20 @@ import 'widgets/Scheduler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Avoid duplicate initialization during hot restart or native auto-init.
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      // Ensure the default app is available before continuing.
+      await Firebase.app();
+    }
+  } on FirebaseException catch (e) {
+    // If the native layer auto-initialized already, ignore duplicate error.
+    if (e.code != 'duplicate-app') rethrow;
+  }
   runApp(const PawFeederApp());
 }
 
@@ -86,22 +102,48 @@ class _Root extends StatefulWidget {
 class _RootState extends State<_Root> {
   User? _user;
   final _fs = FirestoreService();
+  late final StreamSubscription<User?> _authSub;
+  StreamSubscription? _userDocSub;
+  int _role = 0; // 0=user, 1=admin
 
   bool get _loggedIn => _user != null;
-  bool get _isAdmin => (_user?.email ?? '').toLowerCase().contains('@admin');
+  bool get _isAdmin => _role == 1;
 
   @override
   void initState() {
     super.initState();
-    FirebaseAuth.instance.authStateChanges().listen((u) async {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((u) async {
       if (!mounted) return;
-      setState(() => _user = u);
+      setState(() {
+        _user = u;
+        _role = 0;
+      });
+
+      // cancel previous user doc subscription
+      await _userDocSub?.cancel();
+      _userDocSub = null;
 
       if (u != null) {
-        final role = (u.email ?? '').toLowerCase().contains('@admin') ? 'admin' : 'user';
-        await _fs.upsertUserFromAuth(u, role: role);
+        // Ensure user doc exists; default role 0
+        await _fs.upsertUserFromAuth(u, role: 0);
+        // Listen for role changes from Firestore
+        _userDocSub = _fs.streamUser(u.uid).listen((doc) {
+          if (!mounted) return;
+          final data = doc.data();
+          final r = (data?['role'] is int)
+              ? (data?['role'] as int)
+              : (data?['role'] == 'admin' ? 1 : 0); // backward compat
+          setState(() => _role = r);
+        });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _authSub.cancel();
+    _userDocSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _openLoginSheet() async {
@@ -136,7 +178,8 @@ class _RootState extends State<_Root> {
     );
   }
 
-  Future<void> _openSchedulerSheet({bool reschedule = false, DateTime? date}) async {
+  Future<void> _openSchedulerSheet(
+      {bool reschedule = false, DateTime? date}) async {
     await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -160,7 +203,8 @@ class _RootState extends State<_Root> {
                 child: Scheduler(
                   reschedule: reschedule,
                   date: date,
-                  onSubmit: ({DateTime? scheduledDateTime, String? portionSize}) {
+                  onSubmit: (
+                      {DateTime? scheduledDateTime, String? portionSize}) {
                     Navigator.of(ctx).pop(true);
                     if (!mounted) return;
                     if (scheduledDateTime != null) {
@@ -183,15 +227,18 @@ class _RootState extends State<_Root> {
   }
 
   Future<void> _signOut() async {
-  try {
-    await FirebaseAuth.instance.signOut();
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Sign out failed: $e')),
-    );
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      // Ensure we return to a clean root route
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign out failed: $e')),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -204,16 +251,20 @@ class _RootState extends State<_Root> {
         devicesOnline: 8,
         errors24h: 1,
         onOpenProfile: () {
-          Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const AdminEditProfilePage()));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const AdminMyProfileViewPage()));
         },
         onChangePassword: () {
-          Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const AdminChangePasswordPage()));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const AdminChangePasswordPage()));
         },
         onOpenUserList: () {
           Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const AdminUserListPage()));
+              MaterialPageRoute(builder: (_) => const AdminUserListPage()));
         },
         onOpenDevices: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -222,11 +273,11 @@ class _RootState extends State<_Root> {
         },
         onOpenUserHistory: () {
           Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const AdminUserHistoryPage()));
+              MaterialPageRoute(builder: (_) => const AdminUserHistoryPage()));
         },
         onOpenUserStatus: () {
           Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const AdminUserStatusPage()));
+              MaterialPageRoute(builder: (_) => const AdminUserStatusPage()));
         },
         onSignOut: _signOut,
       );
@@ -240,13 +291,14 @@ class _RootState extends State<_Root> {
       isAuthorizing: false,
       errorMessage: null,
       onRetryAuthorize: null,
+      onOpenLogin: !_loggedIn ? _openLoginSheet : null,
       onOpenProfile: () {
         Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const ProfilePage()));
+            MaterialPageRoute(builder: (_) => const UserMyProfileViewPage()));
       },
       onOpenHistory: () {
-        Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const HistoryPage()));
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const HistoryPage()));
       },
       onSignOut: _signOut,
       username: _loggedIn ? (_user?.email?.split('@').first) : null,
@@ -259,7 +311,10 @@ class _RootState extends State<_Root> {
         );
       },
       onSchedule: () => _openSchedulerSheet(),
-      onConnectDevice: _openLoginSheet,
+      onConnectDevice: () {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const DeviceControl()));
+      },
     );
   }
 }

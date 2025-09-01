@@ -320,9 +320,8 @@ class _SchedulerState extends State<Scheduler> {
                 foregroundColor: _scheduled
                     ? const Color(0xFFffffff)
                     : const Color(0xFF0e2a47),
-                backgroundColor: _scheduled
-                    ? Colors.green
-                    : theme.colorScheme.primary,
+                backgroundColor:
+                    _scheduled ? Colors.green : theme.colorScheme.primary,
                 elevation: 0.5,
               ),
               onPressed: _scheduled ? null : _scheduleFeed,

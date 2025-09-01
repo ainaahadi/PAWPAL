@@ -36,14 +36,17 @@ class _SignUpState extends State<SignUp> {
           decoration: BoxDecoration(
             color: barColor,
             borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(15), topRight: Radius.circular(15),
+              topLeft: Radius.circular(15),
+              topRight: Radius.circular(15),
             ),
           ),
           alignment: Alignment.center,
           child: Text(
             widget.errorMessage,
             style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14,
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
             ),
           ),
         ),
@@ -51,7 +54,8 @@ class _SignUpState extends State<SignUp> {
         Image.asset("assets/logo.png", height: 72),
         const SizedBox(height: 8),
         Text("Create Account",
-            style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w800, fontSize: 18)),
+            style: t.bodyLarge
+                ?.copyWith(fontWeight: FontWeight.w800, fontSize: 18)),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
           child: Column(
@@ -78,7 +82,8 @@ class _SignUpState extends State<SignUp> {
                     : ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           foregroundColor: const Color(0xFF0e2a47),
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                         ),
                         onPressed: () =>
                             widget.onSubmit?.call(_username, _email, _password),

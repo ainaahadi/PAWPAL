@@ -15,7 +15,10 @@ class AdminUserHistoryPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('User History'),
+        backgroundColor: const Color(0xFFFFF3C4),
+        foregroundColor: Color(0xFF0E2A47),
       ),
+      backgroundColor: const Color(0xFFFFFDF3),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: query.snapshots(),
         builder: (context, snapshot) {
@@ -36,8 +39,9 @@ class AdminUserHistoryPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = docs[index].data();
               final action = data['action']?.toString() ?? 'unknown';
-              final user =
-                  data['userEmail']?.toString() ?? data['user']?.toString() ?? '';
+              final user = data['userEmail']?.toString() ??
+                  data['user']?.toString() ??
+                  '';
               final ts = (data['timestamp'] as Timestamp?)?.toDate();
               final timeStr = ts != null ? ts.toLocal().toString() : '';
               final subtitle =
